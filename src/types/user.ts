@@ -1,4 +1,5 @@
-export type { UserRole } from "@prisma/client";
+import type { UserRole } from "@prisma/client";
+export type { UserRole };
 
 export interface PublicUser {
   id: string;
@@ -6,7 +7,7 @@ export interface PublicUser {
   firstName: string;
   lastName: string;
   phone?: string | null;
-  role: "CUSTOMER" | "ADMIN";
+  role: UserRole;
 }
 
 export interface UserAddress {
