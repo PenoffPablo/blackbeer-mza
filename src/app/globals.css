@@ -1,0 +1,257 @@
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════
+   DESIGN SYSTEM — BLACKBEER MZA THEME
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* --- Colores de marca --- */
+  --color-primary: #db2777;
+  /* Rosa Fucsia Vibrante */
+  --color-primary-hover: #be185d;
+  --color-primary-light: #f472b6;
+  --color-primary-dark: #9d174d;
+  --color-primary-bg: rgba(219, 39, 119, 0.1);
+
+  --color-secondary: #000000;
+  /* Negro Carbón */
+  --color-secondary-hover: #18181b;
+
+  --color-accent: #eab308;
+  /* Amarillo Brillante */
+  --color-accent-hover: #ca8a04;
+
+  /* --- Fondos y Neutrales (Light Mode = Amarillo Mostaza Grunge) --- */
+  --color-bg: #f1c442;
+  /* Fondo Mostaza Principal */
+  --color-bg-secondary: #e5b632;
+  /* Mostaza Oscuro */
+  --color-bg-tertiary: #d8a724;
+  --color-surface: #fbd35d;
+  /* Mostaza Claro para Tarjetas */
+  --color-surface-hover: #fbe07a;
+  --color-border: #000000;
+  /* Bordes negros estilo cómic/street */
+  --color-border-hover: #18181b;
+  --color-text: #000000;
+  /* Texto Negro */
+  --color-text-secondary: #18181b;
+  --color-text-muted: #3f3f46;
+  --color-text-inverse: #ffffff;
+
+  /* --- Estado --- */
+  --color-success: #10b981;
+  --color-success-bg: #ecfdf5;
+  --color-warning: #f59e0b;
+  --color-warning-bg: #fffbeb;
+  --color-danger: #ef4444;
+  --color-danger-bg: #fef2f2;
+  --color-info: #3b82f6;
+  --color-info-bg: #eff6ff;
+
+  /* --- Tipografía --- */
+  --font-sans: "Outfit", system-ui, -apple-system, sans-serif;
+  --font-grunge: "Permanent Marker", var(--font-sans);
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* --- Espaciado & Layout --- */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1.25rem;
+  --radius-full: 9999px;
+
+  /* --- Sombras Neo-Brutalistas --- */
+  --shadow-sm: 1px 1px 0px 0px #000000;
+  --shadow-md: 3px 3px 0px 0px #000000;
+  --shadow-lg: 6px 6px 0px 0px #000000;
+  --shadow-xl: 10px 10px 0px 0px #000000;
+
+  --transition-fast: 100ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DARK MODE (Dark Grunge = Ladrillos y Neón Fucsia)
+   ═══════════════════════════════════════════════════════════ */
+.dark,
+[data-theme="dark"] {
+  --color-primary: #ec4899;
+  /* Fucsia de Neón brillante */
+  --color-primary-hover: #f472b6;
+  --color-primary-light: #fbcfe8;
+  --color-primary-dark: #db2777;
+  --color-primary-bg: rgba(236, 72, 153, 0.15);
+
+  --color-secondary: #f1c442;
+  /* Mostaza como secundario */
+  --color-secondary-hover: #fbd35d;
+
+  --color-accent: #ec4899;
+
+  --color-bg: #121214;
+  /* Fondo Carbón Muy Oscuro */
+  --color-bg-secondary: #1a1a1e;
+  --color-bg-tertiary: #27272a;
+  --color-surface: #1e1e24;
+  /* Tarjetas carbón */
+  --color-surface-hover: #2d2d35;
+  --color-border: #27272a;
+  --color-border-hover: #3f3f46;
+  --color-text: #ffffff;
+  /* Texto Blanco */
+  --color-text-secondary: #d4d4d8;
+  --color-text-muted: #71717a;
+  --color-text-inverse: #000000;
+
+  --shadow-sm: 1px 1px 0px 0px var(--color-primary);
+  --shadow-md: 3px 3px 0px 0px var(--color-primary);
+  --shadow-lg: 6px 6px 0px 0px var(--color-primary);
+  --shadow-xl: 10px 10px 0px 0px var(--color-primary);
+}
+
+/* ═══ TAILWIND THEME TOKENS ═══ */
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-light: var(--color-primary-light);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-bg: var(--color-primary-bg);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-hover: var(--color-secondary-hover);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-success: var(--color-success);
+  --color-success-bg: var(--color-success-bg);
+  --color-warning: var(--color-warning);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-danger: var(--color-danger);
+  --color-danger-bg: var(--color-danger-bg);
+  --color-info: var(--color-info);
+  --color-info-bg: var(--color-info-bg);
+  --color-border: var(--color-border);
+  --color-border-hover: var(--color-border-hover);
+  --color-bg: var(--color-bg);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-bg-tertiary: var(--color-bg-tertiary);
+  --color-text: var(--color-text);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-inverse: var(--color-text-inverse);
+
+  --font-sans: var(--font-sans);
+  --font-grunge: var(--font-grunge);
+  --font-mono: var(--font-mono);
+
+  --shadow-neo-sm: var(--shadow-sm);
+  --shadow-neo-md: var(--shadow-md);
+  --shadow-neo-lg: var(--shadow-lg);
+  --shadow-neo-xl: var(--shadow-xl);
+}
+
+/* ═══ BASE STYLES ═══ */
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.dark body {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ═══ TEXTURA GRUNGE / ENVEJECIDO ═══ */
+.grunge-texture {
+  position: relative;
+}
+
+.grunge-texture::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  pointer-events: none;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* ═══ ALAMBRE DE PÚAS SEPARADOR (SVG INLINE) ═══ */
+.barbed-wire {
+  height: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='24' viewBox='0 0 120 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M0 12h120M20 12l5-8-10 16 5-8M50 12l4 7-8-14 4 7M80 12l5-8-10 16 5-8M105 12l4 7-8-14 4 7'/%3E%3Ccircle cx='20' cy='12' r='2' fill='black'/%3E%3Ccircle cx='50' cy='12' r='2' fill='black'/%3E%3Ccircle cx='80' cy='12' r='2' fill='black'/%3E%3Ccircle cx='105' cy='12' r='2' fill='black'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: center;
+  opacity: 0.85;
+}
+
+.dark .barbed-wire {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='24' viewBox='0 0 120 24' fill='none' stroke='%23ec4899' stroke-width='2'%3E%3Cpath d='M0 12h120M20 12l5-8-10 16 5-8M50 12l4 7-8-14 4 7M80 12l5-8-10 16 5-8M105 12l4 7-8-14 4 7'/%3E%3Ccircle cx='20' cy='12' r='2' fill='%23ec4899'/%3E%3Ccircle cx='50' cy='12' r='2' fill='%23ec4899'/%3E%3Ccircle cx='80' cy='12' r='2' fill='%23ec4899'/%3E%3Ccircle cx='105' cy='12' r='2' fill='%23ec4899'/%3E%3C/svg%3E");
+}
+
+/* ═══ MICRO-ANIMACIONES ═══ */
+.hover-neo {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.hover-neo:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px 0px #000000;
+}
+
+.dark .hover-neo:hover {
+  box-shadow: 5px 5px 0px 0px var(--color-primary);
+}
+
+.hover-neo:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px 0px #000000;
+}
+
+.dark .hover-neo:active {
+  box-shadow: 1px 1px 0px 0px var(--color-primary);
+}
+
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-secondary);
+  border: 2px solid var(--color-bg);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border: 2px solid var(--color-bg);
+}
+
+/* Ocultar barra de scroll pero permitir scroll */
+.scrollbar-none {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE/Edge */
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
+}
