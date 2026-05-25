@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 import {
   LayoutDashboard,
   Package,
@@ -21,11 +24,36 @@ const sidebarLinks = [
   { label: "Configuración", href: "/admin/settings", icon: Settings },
 ];
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getCurrentUser();
+  
+  if (!session || (session.role !== "ADMIN" && session.role !== "RECEPTIONIST")) {
+    redirect("/login?redirect=/admin");
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { firstName: true, lastName: true, role: true }
+  });
+
+  if (!dbUser) {
+    redirect("/login?redirect=/admin");
+  }
+
+  const userInitial = dbUser.firstName ? dbUser.firstName.charAt(0).toUpperCase() : "U";
+
+  // Filtrar links: el recepcionista solo tiene acceso a Dashboard y Pedidos
+  const filteredLinks = sidebarLinks.filter((link) => {
+    if (dbUser.role === "RECEPTIONIST") {
+      return link.href === "/admin" || link.href === "/admin/orders";
+    }
+    return true;
+  });
+
   return (
     <div 
       className="min-h-screen flex bg-[var(--color-bg-secondary)] text-[var(--color-text)] admin-dark-theme"
@@ -54,7 +82,7 @@ export default function AdminLayout({
             <div>
               <div className="text-sm font-bold">{storeConfig.name}</div>
               <div className="text-[10px] text-[var(--color-text-muted)] font-normal uppercase tracking-wider">
-                Admin Panel
+                {dbUser.role === "ADMIN" ? "Admin Panel" : "Recepcionista"}
               </div>
             </div>
           </Link>
@@ -62,7 +90,7 @@ export default function AdminLayout({
 
         {/* Nav links */}
         <nav className="flex-1 p-3 space-y-1">
-          {sidebarLinks.map((link) => (
+          {filteredLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -99,8 +127,11 @@ export default function AdminLayout({
             Panel de Administración
           </h2>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center text-white text-xs font-bold">
-              A
+            <span className="text-xs text-[var(--color-text-secondary)] font-semibold hidden md:inline">
+              Hola, {dbUser.firstName} ({dbUser.role})
+            </span>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] flex items-center justify-center text-white text-xs font-bold" title={`${dbUser.firstName} ${dbUser.lastName}`}>
+              {userInitial}
             </div>
           </div>
         </header>

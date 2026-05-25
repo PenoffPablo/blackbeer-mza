@@ -6,11 +6,16 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
+  UserPlus,
+  PlusCircle,
+  Settings2,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Dashboard Admin",
@@ -33,6 +38,9 @@ const formatPrice = (price: number) => {
 };
 
 export default async function AdminDashboard() {
+  const user = await getCurrentUser();
+  const isAdmin = user?.role === "ADMIN";
+
   // Fetch real data from Prisma
   const [ordersCount, productsCount, usersCount, recentOrdersData] = await Promise.all([
     prisma.order.count(),
@@ -139,6 +147,70 @@ export default async function AdminDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Quick Actions (Solo para administradores) */}
+      {isAdmin && (
+        <Card padding="md">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">
+              Acciones Rápidas de Administración
+            </h2>
+            <p className="text-sm text-[var(--color-text-muted)] mt-1">
+              Atajos y gestiones operativas frecuentes
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Link
+              href="/admin/workers"
+              className="flex items-center gap-3 p-4 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-neo-sm hover:translate-y-[-2px] transition-all font-bold group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-600 flex items-center justify-center border border-purple-500/30 shrink-0">
+                <UserPlus size={20} />
+              </div>
+              <div>
+                <div className="text-sm text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">
+                  Alta de Empleados
+                </div>
+                <div className="text-2xs text-[var(--color-text-muted)] font-normal mt-0.5">
+                  Crear cuentas para recepcionistas y admin
+                </div>
+              </div>
+            </Link>
+            <Link
+              href="/admin/products"
+              className="flex items-center gap-3 p-4 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-neo-sm hover:translate-y-[-2px] transition-all font-bold group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-600 flex items-center justify-center border border-emerald-500/30 shrink-0">
+                <PlusCircle size={20} />
+              </div>
+              <div>
+                <div className="text-sm text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">
+                  Catálogo de Productos
+                </div>
+                <div className="text-2xs text-[var(--color-text-muted)] font-normal mt-0.5">
+                  Crear y editar platos o bebidas
+                </div>
+              </div>
+            </Link>
+            <Link
+              href="/admin/settings"
+              className="flex items-center gap-3 p-4 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-surface-hover)] border border-[var(--color-border)] rounded-[var(--radius-lg)] shadow-neo-sm hover:translate-y-[-2px] transition-all font-bold group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-600 flex items-center justify-center border border-blue-500/30 shrink-0">
+                <Settings2 size={20} />
+              </div>
+              <div>
+                <div className="text-sm text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">
+                  Configuración del Local
+                </div>
+                <div className="text-2xs text-[var(--color-text-muted)] font-normal mt-0.5">
+                  Editar teléfonos, redes sociales y monedas
+                </div>
+              </div>
+            </Link>
+          </div>
+        </Card>
+      )}
 
       {/* Recent orders */}
       <Card>

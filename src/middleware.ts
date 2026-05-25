@@ -70,8 +70,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Admin paths — require ADMIN role
-  if (isAdminPath(pathname) && payload.role !== "ADMIN") {
+  // Admin paths — require ADMIN or RECEPTIONIST role
+  if (isAdminPath(pathname) && payload.role !== "ADMIN" && payload.role !== "RECEPTIONIST") {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 403 });
     }

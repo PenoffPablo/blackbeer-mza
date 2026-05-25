@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ShoppingCart,
   Search,
@@ -21,6 +21,18 @@ export function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const { cart, updateQuantity, removeItem, clearCart } = useCart();
+  const [user, setUser] = useState<{ firstName: string; role: string } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.user) {
+          setUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const navLinks = [
     { label: "Inicio", href: "/" },
@@ -88,13 +100,21 @@ export function Navbar() {
                 )}
               </button>
 
-              {/* User / Staff Login */}
-              <Link href="/login">
-                <Button variant="outline" size="sm" className="hidden sm:flex border-black text-black">
-                  <User size={16} />
-                  Personal
-                </Button>
-              </Link>
+              {/* User / Staff Login / Panel */}
+              {user && (user.role === "ADMIN" || user.role === "RECEPTIONIST") ? (
+                <Link href="/admin">
+                  <Button variant="primary" size="sm" className="hidden sm:flex border-black text-black font-bold uppercase text-[10px] hover-neo">
+                    Panel ({user.role === "ADMIN" ? "Admin" : "Recep"})
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/login">
+                  <Button variant="outline" size="sm" className="hidden sm:flex border-black text-black">
+                    <User size={16} />
+                    Personal
+                  </Button>
+                </Link>
+              )}
 
               {/* Mobile menu toggle */}
               <button
@@ -130,12 +150,20 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="pt-2 border-t border-[var(--color-border)]">
-                <Link href="/login" onClick={() => setMobileOpen(false)}>
-                  <Button variant="outline" size="md" className="w-full border-black text-black">
-                    <User size={16} />
-                    Acceso Personal
-                  </Button>
-                </Link>
+                {user && (user.role === "ADMIN" || user.role === "RECEPTIONIST") ? (
+                  <Link href="/admin" onClick={() => setMobileOpen(false)}>
+                    <Button variant="primary" size="md" className="w-full border-black text-black font-bold uppercase">
+                      Ir al Panel ({user.role === "ADMIN" ? "Admin" : "Recep"})
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/login" onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" size="md" className="w-full border-black text-black">
+                      <User size={16} />
+                      Acceso Personal
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
