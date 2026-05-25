@@ -1,11 +1,12 @@
 "use client";
 
 // Componente de UI cliente para el detalle del pedido y comanda de cocina
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Printer, CheckCircle2, XCircle, Clock, MapPin, Phone, User, ShoppingBag, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/formatters";
+import { storeConfig } from "@/config/store.config";
 
 interface OrderItem {
   id: string;
@@ -58,6 +59,16 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("selected_branch_location");
+    if (saved && storeConfig.locations.includes(saved as any)) {
+      setSelectedLocation(saved);
+    } else {
+      setSelectedLocation(storeConfig.locations[0]);
+    }
+  }, []);
 
   const handleUpdateStatus = async (newStatus: "DELIVERED" | "CANCELLED") => {
     setLoading(true);
@@ -196,9 +207,9 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
           >
             {/* Cabecera del ticket estilo ticket de caja física */}
             <div className="text-center space-y-2 border-b-2 border-dashed border-black pb-4">
-              <h2 className="font-grunge text-2xl tracking-widest uppercase">BLACK BEER MZA</h2>
+              <h2 className="font-grunge text-2xl tracking-widest uppercase">{storeConfig.name}</h2>
               <p className="text-2xs font-mono font-semibold uppercase tracking-wider">
-                Av. Arístides de Villanueva 123, Mendoza
+                {selectedLocation || storeConfig.locations[0]}
               </p>
               <div className="my-2 border-t border-black border-dashed"></div>
 
@@ -339,6 +350,38 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
 
         {/* Panel lateral de información operativa (No se imprime) */}
         <div className="lg:col-span-5 space-y-6 no-print">
+          {/* Configuración de Sucursal / Impresión */}
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)] p-6 space-y-4">
+            <div>
+              <h3 className="font-bold text-sm text-[var(--color-text)] uppercase tracking-wider flex items-center gap-2">
+                ⚙️ Configuración del Local
+              </h3>
+              <p className="text-2xs text-[var(--color-text-muted)] mt-0.5">
+                Definí en qué sucursal física está esta ticketera
+              </p>
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="block text-2xs font-black text-[var(--color-text-muted)] uppercase tracking-wider">
+                Sucursal Activa
+              </label>
+              <select
+                value={selectedLocation}
+                onChange={(e) => {
+                  setSelectedLocation(e.target.value);
+                  localStorage.setItem("selected_branch_location", e.target.value);
+                }}
+                className="w-full px-3 py-2 text-xs bg-[var(--color-bg-secondary)] text-[var(--color-text)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] font-bold cursor-pointer"
+              >
+                {storeConfig.locations.map((loc, idx) => (
+                  <option key={idx} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)] p-6 space-y-6">
             <div>
               <h3 className="font-bold text-lg text-[var(--color-text)] flex items-center gap-2">
