@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { User, Mail, Phone, Calendar, Shield } from "lucide-react";
 import type { Metadata } from "next";
 
+import type { Address } from "@prisma/client";
+
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -93,7 +95,7 @@ export default async function AccountPage() {
                 No tenés direcciones registradas todavía. Agregaremos una automáticamente en tu próximo checkout.
               </p>
             ) : (
-              user.addresses.map((address) => (
+              user.addresses.map((address: Address) => (
                 <div
                   key={address.id}
                   className="p-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-[var(--radius-lg)] text-xs space-y-1"
