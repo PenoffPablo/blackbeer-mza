@@ -165,32 +165,35 @@ export default function WorkersPage() {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Modal Alta de Trabajador */}
+      </div>      {/* Modal Alta de Trabajador */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-[var(--color-surface)] w-full max-w-md rounded-[var(--radius-xl)] border-2 border-black shadow-neo-xl overflow-hidden animate-slide-up text-black">
-            <div className="p-5 border-b-2 border-black bg-white flex justify-between items-center">
-              <h2 className="font-black uppercase tracking-wider text-black">Alta de Personal</h2>
-              <button onClick={() => setShowModal(false)} className="text-neutral-500 hover:text-black hover:bg-neutral-100 p-1 rounded-md transition-colors">
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+          <div className="relative bg-[var(--color-surface)] w-full max-w-md rounded-[var(--radius-xl)] border border-[var(--color-border)] shadow-neo-xl overflow-hidden animate-slide-up text-[var(--color-text)]">
+            <div className="p-5 border-b border-[var(--color-border)] bg-[var(--color-surface)] flex justify-between items-center">
+              <h2 className="font-black uppercase tracking-wider text-[var(--color-text)]">Alta de Personal</h2>
+              <button 
+                onClick={() => setShowModal(false)} 
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] p-1.5 rounded-md transition-colors cursor-pointer"
+              >
                 ✕
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-white">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-[var(--color-surface)]">
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="Nombre"
                   value={form.firstName}
                   onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                  placeholder="Ej: Simón"
                   required
                 />
                 <Input
                   label="Apellido"
                   value={form.lastName}
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                  placeholder="Ej: Aldevaran"
                   required
                 />
               </div>
@@ -213,26 +216,35 @@ export default function WorkersPage() {
                 required
                 minLength={6}
               />
-
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-black uppercase tracking-wider">
+ 
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-[var(--color-text)]">
                   Rol del Trabajador
                 </label>
                 <select
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value as any })}
-                  className="w-full px-3 py-2 text-sm bg-white text-black border-2 border-black rounded-[var(--radius-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] font-semibold"
+                  className="w-full px-3 py-2 text-sm bg-[var(--color-bg-secondary)] text-[var(--color-text)] border border-[var(--color-border)] rounded-[var(--radius-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] font-semibold cursor-pointer"
                 >
                   <option value="RECEPTIONIST">Recepcionista (Toma Pedidos)</option>
                   <option value="ADMIN">Administrador (Acceso Total)</option>
                 </select>
               </div>
-
-              <div className="pt-4 flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowModal(false)} className="border-2 border-black text-black font-bold text-xs uppercase">
+ 
+              <div className="pt-4 flex justify-end gap-2.5">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowModal(false)} 
+                  className="border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] font-bold text-xs uppercase cursor-pointer"
+                >
                   Cancelar
                 </Button>
-                <Button type="submit" variant="primary" className="border-2 border-black hover-neo bg-[var(--color-primary)] text-black font-black uppercase tracking-wider text-xs">
+                <Button 
+                  type="submit" 
+                  variant="primary" 
+                  className="border border-black hover-neo bg-[var(--color-primary)] text-black font-black uppercase tracking-wider text-xs cursor-pointer"
+                >
                   Crear Cuenta
                 </Button>
               </div>
