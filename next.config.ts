@@ -12,11 +12,10 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    // Para versiones experimentales o nuevas de Next
-    allowedDevOrigins: ["192.168.1.46", "localhost"],
+    serverActions: {
+      allowedOrigins: ["192.168.1.46", "localhost:3000", "localhost"],
+    },
   },
-  // Por si tu versión lo pide en la raíz
-  allowedDevOrigins: ["192.168.1.46", "localhost"],
-} as any;
+};
 
 export default nextConfig;

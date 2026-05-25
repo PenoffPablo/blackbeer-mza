@@ -148,6 +148,8 @@ model Order {
   orderNumber    String      @unique
   userId         String
   addressId      String?
+  type           OrderType   @default(DELIVERY)
+  tableNumber    String?
   status         OrderStatus @default(PENDING)
   subtotal       Decimal
   shippingCost   Decimal     @default(0)
@@ -172,6 +174,17 @@ model Order {
   @@index([status])
   @@index([createdAt])
   @@index([orderNumber])
+}
+
+enum OrderType {
+  DELIVERY
+  TAKE_AWAY
+  DINE_IN
+}
+
+model OrderSequence {
+  name  String @id
+  value Int    @default(0)
 }
 
 enum OrderStatus {

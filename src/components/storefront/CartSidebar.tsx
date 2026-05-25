@@ -64,6 +64,7 @@ export default function CartSidebar({
 }: CartSidebarProps) {
   const [step, setStep] = useState<"cart" | "checkout">("cart");
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const { tableNumber, clearTable } = useTable();
 
   // Formulario de Checkout
@@ -82,8 +83,6 @@ export default function CartSidebar({
   // Propina (mozo) para consumo local
   const [hasTip10, setHasTip10] = useState(false);
   const [customTip, setCustomTip] = useState("");
-
-
 
   // GPS Coords
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -120,14 +119,15 @@ export default function CartSidebar({
 
   const totalCost = cart.subtotal + tipAmount;
 
-  const handleSendOrder = (e: React.FormEvent) => {
+  const handleSendOrder = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!customerName.trim()) {
       toast("El nombre es requerido", "error");
       return;
     }
-    if (!customerPhone.trim()) {
+
+    if (!tableNumber && !customerPhone.trim()) {
       toast("El teléfono celular es requerido", "error");
       return;
     }
@@ -139,37 +139,114 @@ export default function CartSidebar({
       }
     }
 
-    // Compilar ticketNumber aleatorio (001 a 999) para el cajero
-    const ticketNumber = Math.floor(Math.random() * 900) + 100;
+    setLoading(true);
 
-    const orderDetails: any = {
-      customerName,
-      customerPhone,
-      deliveryType: tableNumber ? "local" : deliveryType,
-      tableNumber,
-      address: { street, number, apartment, notes },
-      paymentMethod,
-      gpsCoords,
-      ticketNumber,
-      tipAmount,
-      orderComments,
-    };
+    try {
+      if (tableNumber) {
+        // FLUJO DINE_IN (Salón - Canal Interno en tiempo real)
+        const orderPayload = {
+          firstName: customerName,
+          type: "DINE_IN",
+          tableNumber: tableNumber,
+          paymentMethod: paymentMethod === "cash" ? "CASH" : "TRANSFER",
+          items: cart.items.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            variantName: item.variantName,
+            quantity: item.quantity,
+          })),
+        };
 
-    // Formatear mensaje de WhatsApp
-    const message = formatWhatsAppMessage(cart as any, orderDetails);
+        const response = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload),
+        });
 
-    // Obtener enlace y redireccionar
-    const whatsappLink = getWhatsAppLink(storeConfig.contact.whatsapp, message);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Error al enviar el pedido a cocina");
+        }
 
-    toast("¡Comanda generada! Abriendo WhatsApp...", "success");
+        const data = await response.json();
+        toast("¡Pedido enviado a cocina con éxito!", "success");
 
-    // Limpiar carrito y resetear
-    onClearCart();
-    if (tableNumber) clearTable();
-    onClose();
+        // Limpiar carrito y resetear
+        onClearCart();
+        clearTable();
+        onClose();
+      } else {
+        // FLUJO DELIVERY / TAKE AWAY (WhatsApp + DB Persistencia)
+        const orderPayload = {
+          email: `${customerPhone.replace(/[^0-9]/g, "") || "guest"}@blackbeermza.com`,
+          firstName: customerName,
+          phone: customerPhone,
+          type: deliveryType === "delivery" ? "DELIVERY" : "TAKE_AWAY",
+          shippingAddress: deliveryType === "delivery" ? {
+            street,
+            number,
+            apartment: apartment || undefined,
+            city: "Mendoza",
+            state: "Mendoza",
+            zipCode: "5500",
+          } : undefined,
+          paymentMethod: paymentMethod === "cash" ? "CASH" : "TRANSFER",
+          items: cart.items.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            variantName: item.variantName,
+            quantity: item.quantity,
+          })),
+        };
 
-    // Redireccionar
-    window.open(whatsappLink, "_blank");
+        const response = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Error al procesar la orden");
+        }
+
+        const data = await response.json();
+
+        // Compilar ticketNumber aleatorio (001 a 999) para el cajero
+        const ticketNumber = Math.floor(Math.random() * 900) + 100;
+
+        const orderDetails: any = {
+          customerName,
+          customerPhone,
+          deliveryType,
+          address: { street, number, apartment, notes },
+          paymentMethod,
+          gpsCoords,
+          ticketNumber,
+          tipAmount,
+          orderComments,
+        };
+
+        // Formatear mensaje de WhatsApp
+        const message = formatWhatsAppMessage(cart as any, orderDetails);
+
+        // Obtener enlace y redireccionar
+        const whatsappLink = getWhatsAppLink(storeConfig.contact.whatsapp, message);
+
+        toast("¡Comanda generada! Abriendo WhatsApp...", "success");
+
+        // Limpiar carrito y resetear
+        onClearCart();
+        onClose();
+
+        // Redireccionar
+        window.open(whatsappLink, "_blank");
+      }
+    } catch (err: any) {
+      toast(err.message || "Error al procesar el pedido", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -281,12 +358,12 @@ export default function CartSidebar({
                 {/* Datos de Contacto */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-black uppercase tracking-wider text-black border-b-2 border-black pb-1">
-                    👤 1. Datos de Contacto
+                    👤 1. Datos del Pedido
                   </h4>
                   <div className="grid grid-cols-1 gap-3">
                     <div className="space-y-1">
                       <label className="block text-xs font-bold text-black">
-                        Nombre y Apellido
+                        {tableNumber ? "Nombre de quien pide" : "Nombre y Apellido"}
                       </label>
                       <input
                         type="text"
@@ -297,19 +374,21 @@ export default function CartSidebar({
                         required
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="block text-xs font-bold text-black">
-                        Teléfono Celular (WhatsApp)
-                      </label>
-                      <input
-                        type="tel"
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        placeholder="Ej. 2616854124"
-                        className="w-full px-3 py-2 text-sm bg-white text-black border-2 border-black rounded-[var(--radius-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                        required
-                      />
-                    </div>
+                    {!tableNumber && (
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold text-black">
+                          Teléfono Celular (WhatsApp)
+                        </label>
+                        <input
+                          type="tel"
+                          value={customerPhone}
+                          onChange={(e) => setCustomerPhone(e.target.value)}
+                          placeholder="Ej. 2616854124"
+                          className="w-full px-3 py-2 text-sm bg-white text-black border-2 border-black rounded-[var(--radius-md)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                          required
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -483,17 +562,17 @@ export default function CartSidebar({
                 {/* Forma de Pago */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-black uppercase tracking-wider text-black border-b-2 border-black pb-1">
-                    💳 4. Método de Pago
+                    💳 2. Método de Pago
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      disabled={deliveryType === "delivery"}
+                      disabled={!tableNumber && deliveryType === "delivery"}
                       onClick={() => setPaymentMethod("cash")}
                       className={`py-2 px-3 border-2 border-black rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${paymentMethod === "cash"
                           ? "bg-[var(--color-primary)] text-black shadow-neo-sm"
                           : "bg-white text-neutral-500"
-                        } ${deliveryType === "delivery" ? "opacity-50 cursor-not-allowed bg-neutral-100 border-dashed" : ""}`}
+                        } ${(!tableNumber && deliveryType === "delivery") ? "opacity-50 cursor-not-allowed bg-neutral-100 border-dashed" : ""}`}
                     >
                       💵 Efectivo
                     </button>
@@ -509,7 +588,7 @@ export default function CartSidebar({
                     </button>
                   </div>
 
-                  {deliveryType === "delivery" && (
+                  {!tableNumber && deliveryType === "delivery" && (
                     <p className="text-[10px] text-[var(--color-danger)] font-bold">
                       * Por motivos de seguridad (pedidos falsos), para envíos a domicilio solo aceptamos transferencia.
                     </p>
@@ -518,7 +597,7 @@ export default function CartSidebar({
                   {paymentMethod === "transfer" && (
                     <div className="space-y-2 bg-neutral-50 border-2 border-dashed border-black/20 p-4 rounded-lg text-center">
                       <p className="text-xs font-bold text-black">
-                        Pagá por transferencia y adjuntá el comprobante al enviar.
+                        {tableNumber ? "Paga al finalizar el consumo por transferencia o QR." : "Pagá por transferencia y adjuntá el comprobante al enviar."}
                       </p>
                       <Button
                         type="button"
@@ -579,15 +658,22 @@ export default function CartSidebar({
                     type="button"
                     variant="outline"
                     onClick={() => setStep("cart")}
+                    disabled={loading}
                     className="border-2 border-black text-black text-xs font-bold uppercase"
                   >
                     Atrás
                   </Button>
                   <Button
                     onClick={handleSendOrder}
-                    className="col-span-2 border-2 border-black hover-neo bg-emerald-500 text-white hover:bg-emerald-600 font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2"
+                    disabled={loading}
+                    isLoading={loading}
+                    className={`col-span-2 border-2 border-black hover-neo font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 ${
+                      tableNumber 
+                        ? "bg-[var(--color-primary)] text-black hover:bg-[var(--color-primary-hover)]" 
+                        : "bg-emerald-500 text-white hover:bg-emerald-600"
+                    }`}
                   >
-                    Enviar Pedido WhatsApp
+                    {tableNumber ? "Enviar a Cocina" : "Enviar Pedido WhatsApp"}
                   </Button>
                 </div>
               )}

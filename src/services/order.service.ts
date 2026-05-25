@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/utils";
-import type { OrderStatus } from "@prisma/client";
+import type { OrderStatus, OrderType } from "@prisma/client";
 import type { OrderListItem, OrderDetail } from "@/types/order";
 
 interface CreateOrderInput {
@@ -15,6 +15,8 @@ interface CreateOrderInput {
   couponCode?: string;
   shippingMethod?: string;
   customerNotes?: string;
+  type?: OrderType;
+  tableNumber?: string;
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<string> {
@@ -61,18 +63,33 @@ export async function createOrder(input: CreateOrderInput): Promise<string> {
   const total = subtotal + shippingCost - discount + tax;
 
   const order = await prisma.$transaction(async (tx) => {
+    const orderType = input.type ?? "DELIVERY";
+    const sequenceName = orderType === "DINE_IN" ? "DINE_IN" : "DELIVERY_TAKE_AWAY";
+    const prefix = orderType === "DINE_IN" ? "TCK-" : "PED-";
+
+    // Upsert transaccional atómico
+    const seq = await tx.orderSequence.upsert({
+      where: { name: sequenceName },
+      update: { value: { increment: 1 } },
+      create: { name: sequenceName, value: 1 },
+    });
+
+    const orderNumber = `${prefix}${seq.value}`;
+
     // Create order
     const newOrder = await tx.order.create({
       data: {
-        orderNumber: generateOrderNumber(),
+        orderNumber,
         userId,
-        addressId,
+        addressId: orderType === "DINE_IN" ? null : addressId,
+        type: orderType,
+        tableNumber: orderType === "DINE_IN" ? input.tableNumber : null,
         subtotal,
         shippingCost,
         discount,
         tax,
         total,
-        shippingMethod,
+        shippingMethod: orderType === "DINE_IN" ? "Consumo en salón" : shippingMethod,
         customerNotes,
         items: {
           create: orderItems,
