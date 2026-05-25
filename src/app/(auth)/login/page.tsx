@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LoginForm } from "@/components/features/LoginForm";
 import { storeConfig } from "@/config/store.config";
 import type { Metadata } from "next";
@@ -24,7 +25,9 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <LoginForm />
+        <Suspense fallback={<div className="text-center text-sm text-[var(--color-text-muted)]">Cargando...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );
