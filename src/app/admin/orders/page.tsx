@@ -7,6 +7,11 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminOrdersPage() {
   const orders = await prisma.order.findMany({
+    where: {
+      status: {
+        notIn: ["DELIVERED", "CANCELLED"],
+      },
+    },
     orderBy: { createdAt: "desc" },
     include: {
       user: { select: { firstName: true, lastName: true, email: true } },
@@ -18,10 +23,10 @@ export default async function AdminOrdersPage() {
     <div className="animate-fade-in space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold text-[var(--color-text)]">
-          Gestión de Pedidos
+          Panel de Comandas (Activas)
         </h1>
         <p className="text-xs text-[var(--color-text-muted)] mt-1">
-          Seguimiento, actualización de estado y facturación de compras
+          Visualización y gestión en tiempo real de los pedidos pendientes en cocina y salón
         </p>
       </div>
 
@@ -32,61 +37,79 @@ export default async function AdminOrdersPage() {
             <thead>
               <tr className="bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)] text-xs font-bold text-[var(--color-text-secondary)] uppercase tracking-wider">
                 <th className="px-6 py-4">Nº Pedido</th>
-                <th className="px-6 py-4">Cliente / Email</th>
-                <th className="px-6 py-4">Fecha</th>
-                <th className="px-6 py-4">Items</th>
+                <th className="px-6 py-4">Cliente</th>
+                <th className="px-6 py-4">Origen</th>
+                <th className="px-6 py-4">Ingreso</th>
                 <th className="px-6 py-4">Total</th>
                 <th className="px-6 py-4">Estado</th>
-                <th className="px-6 py-4 text-right">Detalle</th>
+                <th className="px-6 py-4 text-right">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)] text-sm text-[var(--color-text-secondary)]">
               {orders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-[var(--color-text-muted)]">
-                    No se han realizado pedidos en la tienda todavía.
+                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-[var(--color-text-muted)] font-bold">
+                    🎉 ¡No hay comandas activas pendientes! Todos los pedidos fueron completados o cancelados.
                   </td>
                 </tr>
               ) : (
                 orders.map((order) => (
                   <tr key={order.id} className="hover:bg-[var(--color-surface-hover)]/40 transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-[var(--color-text)]">
-                      #{order.orderNumber}
+                    <td className="px-6 py-4">
+                      <div className="font-mono font-bold text-[var(--color-text)] text-sm">
+                        #{order.orderNumber}
+                      </div>
+                      <div className="text-2xs text-[var(--color-text-muted)] mt-0.5">
+                        {order._count.items} {order._count.items === 1 ? 'producto' : 'productos'}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-[var(--color-text)]">
                         {order.user.firstName} {order.user.lastName}
                       </div>
-                      <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                        {order.user.email}
-                      </div>
+                      {!order.user.email.startsWith("salon-mesa-") && (
+                        <div className="text-2xs text-[var(--color-text-muted)] mt-0.5">
+                          {order.user.email}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
-                      {new Date(order.createdAt).toLocaleDateString()}
+                      {order.type === "DINE_IN" ? (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-black bg-amber-500/20 text-amber-700 border border-amber-500/30 uppercase tracking-wider">
+                          📍 Mesa {order.tableNumber || "-"}
+                        </span>
+                      ) : order.type === "TAKE_AWAY" ? (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-black bg-purple-500/20 text-purple-700 border border-purple-500/30 uppercase tracking-wider">
+                          🛍️ Retiro
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-black bg-blue-500/20 text-blue-700 border border-blue-500/30 uppercase tracking-wider">
+                          🛵 Delivery
+                        </span>
+                      )}
                     </td>
-                    <td className="px-6 py-4 font-mono">
-                      {order._count.items}
+                    <td className="px-6 py-4">
+                      <div className="font-semibold text-[var(--color-text)]">
+                        {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                      <div className="text-2xs text-[var(--color-text-muted)] mt-0.5">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 font-bold text-[var(--color-text)]">
+                    <td className="px-6 py-4 font-bold text-[var(--color-text)] font-mono">
                       {formatPrice(Number(order.total))}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                        order.status === "DELIVERED"
-                          ? "bg-emerald-500/20 text-emerald-600"
-                          : order.status === "CANCELLED"
-                          ? "bg-rose-500/20 text-rose-600"
-                          : "bg-amber-500/20 text-amber-600"
-                      }`}>
+                      <span className={`px-2.5 py-0.5 rounded-full text-2xs font-bold bg-amber-500/20 text-amber-600 border border-amber-500/30 uppercase`}>
                         {order.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Link
                         href={`/admin/orders/${order.id}`}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-[var(--color-primary)] hover:opacity-85 transition-opacity"
+                        className="inline-flex items-center gap-1 text-xs font-black uppercase bg-[var(--color-primary)] text-black border border-black px-2.5 py-1.5 rounded hover:bg-[var(--color-primary-hover)] shadow-neo-xs transition-all"
                       >
-                        <Eye size={14} /> Gestionar
+                        <Eye size={12} /> Comanda
                       </Link>
                     </td>
                   </tr>
