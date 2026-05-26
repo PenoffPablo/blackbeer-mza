@@ -73,9 +73,6 @@ export default function CartSidebar({
   const [deliveryType, setDeliveryType] = useState<"delivery" | "takeaway">("delivery");
 
   // Dirección y comentarios
-  const [street, setStreet] = useState("");
-  const [number, setNumber] = useState("");
-  const [apartment, setApartment] = useState("");
   const [notes, setNotes] = useState("");
   const [takeawayLocation, setTakeawayLocation] = useState("");
   const [orderComments, setOrderComments] = useState("");
@@ -98,9 +95,6 @@ export default function CartSidebar({
   // Limpiar estados al cambiar el método de entrega (takeaway / delivery) y forzar pago por transferencia si es delivery
   useEffect(() => {
     setNotes("");
-    setStreet("");
-    setNumber("");
-    setApartment("");
     setGpsCoords(null);
     setTakeawayLocation("");
     if (deliveryType === "delivery") {
@@ -151,8 +145,8 @@ export default function CartSidebar({
           paymentMethod: paymentMethod === "cash" ? "CASH" : "TRANSFER",
           items: cart.items.map((item) => ({
             productId: item.productId,
-            variantId: item.variantId,
-            variantName: item.variantName,
+            variantId: item.variantId || undefined,
+            variantName: item.variantName || undefined,
             quantity: item.quantity,
           })),
         };
@@ -183,9 +177,8 @@ export default function CartSidebar({
           phone: customerPhone,
           type: deliveryType === "delivery" ? "DELIVERY" : "TAKE_AWAY",
           shippingAddress: deliveryType === "delivery" ? {
-            street,
-            number,
-            apartment: apartment || undefined,
+            street: "Ubicación en Mapa",
+            number: gpsCoords ? `GPS: ${gpsCoords.lat.toFixed(6)}, ${gpsCoords.lng.toFixed(6)}` : "",
             city: "Mendoza",
             state: "Mendoza",
             zipCode: "5500",
@@ -193,8 +186,8 @@ export default function CartSidebar({
           paymentMethod: paymentMethod === "cash" ? "CASH" : "TRANSFER",
           items: cart.items.map((item) => ({
             productId: item.productId,
-            variantId: item.variantId,
-            variantName: item.variantName,
+            variantId: item.variantId || undefined,
+            variantName: item.variantName || undefined,
             quantity: item.quantity,
           })),
         };
@@ -219,7 +212,7 @@ export default function CartSidebar({
           customerName,
           customerPhone,
           deliveryType,
-          address: { street, number, apartment, notes },
+          address: { street: "Ubicación en Mapa", number: gpsCoords ? `GPS: ${gpsCoords.lat.toFixed(6)}, ${gpsCoords.lng.toFixed(6)}` : "", notes },
           paymentMethod,
           gpsCoords,
           ticketNumber,
@@ -434,48 +427,6 @@ export default function CartSidebar({
                               * Debes seleccionar tu ubicación en el mapa
                             </p>
                           )}
-                        </div>
-
-                        {/* Campos de dirección manuales obligatorios para validación en BD */}
-                        <div className="grid grid-cols-2 gap-2 mt-3">
-                          <div className="col-span-2">
-                            <label className="block text-[10px] font-bold text-black uppercase">
-                              Calle / Avenida
-                            </label>
-                            <input
-                              type="text"
-                              value={street}
-                              onChange={(e) => setStreet(e.target.value)}
-                              placeholder="Ej. Av. San Martín"
-                              className="w-full px-2 py-1.5 text-xs bg-white text-black border-2 border-black rounded font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[10px] font-bold text-black uppercase">
-                              Número
-                            </label>
-                            <input
-                              type="text"
-                              value={number}
-                              onChange={(e) => setNumber(e.target.value)}
-                              placeholder="Ej. 1234"
-                              className="w-full px-2 py-1.5 text-xs bg-white text-black border-2 border-black rounded font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[10px] font-bold text-black uppercase">
-                              Piso / Depto (Opcional)
-                            </label>
-                            <input
-                              type="text"
-                              value={apartment}
-                              onChange={(e) => setApartment(e.target.value)}
-                              placeholder="Ej. 3B"
-                              className="w-full px-2 py-1.5 text-xs bg-white text-black border-2 border-black rounded font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-                            />
-                          </div>
                         </div>
 
                         <div className="space-y-1">

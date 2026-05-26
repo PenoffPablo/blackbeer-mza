@@ -85,10 +85,7 @@ test.describe('Flujo de Pedido con Delivery y Modificadores', () => {
     // Seleccionar Delivery
     await page.getByRole('button', { name: /🛵 Delivery/i }).click();
 
-    // Completar dirección manual
-    await page.getByPlaceholder('Ej. Av. San Martín').fill('Calle Falsa');
-    await page.getByPlaceholder('Ej. 1234').fill('123');
-    await page.getByPlaceholder('Ej. 3B').fill('4A');
+
 
     // Intentar enviar pedido sin marcar mapa ni zona
     await page.getByRole('button', { name: /Enviar Pedido WhatsApp/i }).click();

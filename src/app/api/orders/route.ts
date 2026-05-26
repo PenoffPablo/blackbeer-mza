@@ -23,8 +23,8 @@ const orderSchema = z.object({
   items: z.array(
     z.object({
       productId: z.string().min(1),
-      variantId: z.string().optional(),
-      variantName: z.string().optional(),
+      variantId: z.string().nullish(),
+      variantName: z.string().nullish(),
       quantity: z.number().int().positive(),
     })
   ).min(1, "El carrito debe tener al menos un item"),

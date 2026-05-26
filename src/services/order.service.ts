@@ -6,8 +6,8 @@ interface CreateOrderInput {
   userId: string | null;
   items: {
     productId: string;
-    variantId?: string;
-    variantName?: string;
+    variantId?: string | null;
+    variantName?: string | null;
     quantity: number;
   }[];
   couponCode?: string;

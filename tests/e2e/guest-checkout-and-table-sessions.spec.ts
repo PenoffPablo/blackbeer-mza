@@ -72,10 +72,7 @@ test.describe('Flujos de Invitado (Delivery) y Sesiones de Mesa (Salón)', () =>
     // Seleccionar Delivery
     await page.getByRole('button', { name: /🛵 Delivery/i }).click();
 
-    // Completar campos manuales de dirección (nuevos campos agregados)
-    await page.getByPlaceholder('Ej. Av. San Martín').fill('Av. Las Heras');
-    await page.getByPlaceholder('Ej. 1234').fill('1542');
-    await page.getByPlaceholder('Ej. 3B').fill('2B');
+
 
     // Hacer click en el mapa para georreferenciación
     await page.locator('.leaflet-container').click();
@@ -115,9 +112,8 @@ test.describe('Flujos de Invitado (Delivery) y Sesiones de Mesa (Salón)', () =>
     expect(dbAddress).not.toBeNull();
     // La dirección del invitado no debe estar vinculada a ningún usuario en la tabla Address
     expect(dbAddress!.userId).toBeNull();
-    expect(dbAddress!.street).toBe('Av. Las Heras');
-    expect(dbAddress!.number).toBe('1542');
-    expect(dbAddress!.apartment).toBe('2B');
+    expect(dbAddress!.street).toBe('Ubicación en Mapa');
+    expect(dbAddress!.number).toContain('GPS:');
   });
 
   test('Pedidos en Salón (Mesa): múltiples pedidos consecutivos deben agruparse en el mismo tableSession', async ({ page }) => {
