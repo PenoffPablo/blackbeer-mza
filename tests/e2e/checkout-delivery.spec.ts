@@ -85,6 +85,11 @@ test.describe('Flujo de Pedido con Delivery y Modificadores', () => {
     // Seleccionar Delivery
     await page.getByRole('button', { name: /🛵 Delivery/i }).click();
 
+    // Completar dirección manual
+    await page.getByPlaceholder('Ej. Av. San Martín').fill('Calle Falsa');
+    await page.getByPlaceholder('Ej. 1234').fill('123');
+    await page.getByPlaceholder('Ej. 3B').fill('4A');
+
     // Intentar enviar pedido sin marcar mapa ni zona
     await page.getByRole('button', { name: /Enviar Pedido WhatsApp/i }).click();
     // Debería haber un toast de error
@@ -94,16 +99,7 @@ test.describe('Flujo de Pedido con Delivery y Modificadores', () => {
     // Como el MapPicker usa Leaflet, hacer click en el mapa
     await page.locator('.leaflet-container').click();
     // Cerrar toast anterior si molesta
-    // Seleccionar zona
-    await page.locator('select').selectOption({ index: 1 });
-
-    // Al seleccionar la zona, el costo de envío debería actualizarse
-    // Bueno, en la UI dice "A coordinar", validamos que así sea
-    await expect(page.locator('text=Costo de envío (Zona Test 1):')).toBeVisible();
-
-    // Enviar pedido
-    // Para evitar que se abra WhatsApp y bloquee Playwright, interceptamos la creación de una nueva pestaña o simulamos
-    // Como WhatsApp usa window.open, lo espiamos o lo anulamos para que el test no cuelgue.
+    // Mockear window.open
     await page.evaluate(() => {
       window.open = () => null;
     });

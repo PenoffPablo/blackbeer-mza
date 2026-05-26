@@ -3,7 +3,6 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createOrder } from "@/services/order.service";
-import bcrypt from "bcryptjs";
 
 const orderSchema = z.object({
   email: z.string().email("Email inválido").optional(),
@@ -80,43 +79,41 @@ const orderSchema = z.object({
   }
 });
 
+async function getOrCreateTableSession(tableNumber: string): Promise<string> {
+  const activeOrder = await prisma.order.findFirst({
+    where: {
+      tableNumber,
+      type: "DINE_IN",
+      status: {
+        in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED"]
+      },
+      createdAt: {
+        gte: new Date(Date.now() - 6 * 60 * 60 * 1000) // Límite de seguridad: últimas 6 horas
+      }
+    },
+    orderBy: { createdAt: "desc" },
+    select: { tableSession: true }
+  });
+
+  if (activeOrder?.tableSession) {
+    return activeOrder.tableSession;
+  }
+
+  const shortDate = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `SES-${tableNumber}-${shortDate}-${randomSuffix}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validatedData = orderSchema.parse(body);
 
-    // 1. Determine user ID (authenticated or find-or-create guest)
+    // 1. Determine user ID (authenticated or null for guest)
     const currentUser = await getCurrentUser();
-    let userId = currentUser?.userId || "";
+    const userId = currentUser?.userId || null;
 
-    if (!userId) {
-      // Find or create customer account by email
-      const userEmail = validatedData.email || `salon-mesa-${validatedData.tableNumber}-${Math.random().toString(36).substring(2, 7)}@blackbeermza.com`;
-      const existingUser = await prisma.user.findUnique({
-        where: { email: userEmail },
-      });
-
-      if (existingUser) {
-        userId = existingUser.id;
-      } else {
-        // Create guest user with inactive/placeholder password
-        const salt = await bcrypt.genSalt(10);
-        const passwordHash = await bcrypt.hash(Math.random().toString(36), salt);
-        const newUser = await prisma.user.create({
-          data: {
-            email: userEmail,
-            passwordHash,
-            firstName: validatedData.firstName,
-            lastName: validatedData.lastName || "Invitado",
-            phone: validatedData.phone || null,
-            role: "CUSTOMER",
-          },
-        });
-        userId = newUser.id;
-      }
-    }
-
-    // 2. Create shipping address for user (only for DELIVERY or TAKE_AWAY)
+    // 2. Create shipping address (only for DELIVERY or TAKE_AWAY)
     let addressId: string | undefined = undefined;
     if (validatedData.type !== "DINE_IN" && validatedData.shippingAddress) {
       const address = await prisma.address.create({
@@ -134,13 +131,20 @@ export async function POST(request: NextRequest) {
       addressId = address.id;
     }
 
-    // 3. Create the order
+    // 3. Resolve table session for dine-in consumption
+    let tableSession: string | null = null;
+    if (validatedData.type === "DINE_IN" && validatedData.tableNumber) {
+      tableSession = await getOrCreateTableSession(validatedData.tableNumber);
+    }
+
+    // 4. Create the order
     const orderId = await createOrder({
       userId,
       addressId,
       items: validatedData.items,
       type: validatedData.type,
       tableNumber: validatedData.tableNumber,
+      tableSession,
       shippingMethod: validatedData.type === "DINE_IN"
         ? "Consumo en salón"
         : validatedData.type === "TAKE_AWAY"
@@ -151,7 +155,7 @@ export async function POST(request: NextRequest) {
         : `Pago vía: ${validatedData.paymentMethod}`,
     });
 
-    // 4. Handle specific payment integration
+    // 5. Handle specific payment integration
     let initPoint = null;
 
     if (validatedData.paymentMethod) {

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { storeConfig } from "@/config/store.config";
 import { LogoutButton } from "@/components/admin/LogoutButton";
+import { AdminMobileNav } from "@/components/admin/AdminMobileNav";
 
 const sidebarLinks = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -40,7 +41,7 @@ export default async function AdminLayout({
     select: { firstName: true, lastName: true, role: true }
   });
 
-  if (!dbUser) {
+  if (!dbUser || (dbUser.role !== "ADMIN" && dbUser.role !== "RECEPTIONIST")) {
     redirect("/login?redirect=/admin");
   }
 
@@ -122,10 +123,16 @@ export default async function AdminLayout({
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-6 shrink-0">
-          <h2 className="font-semibold text-[var(--color-text)]">
-            Panel de Administración
-          </h2>
+        <header className="h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-6 shrink-0 gap-4">
+          <div className="flex items-center gap-3">
+            <AdminMobileNav role={dbUser.role as "ADMIN" | "RECEPTIONIST"} storeName={storeConfig.name} />
+            <h2 className="font-semibold text-[var(--color-text)] hidden sm:block">
+              Panel de Administración
+            </h2>
+            <h2 className="font-semibold text-[var(--color-text)] sm:hidden">
+              Admin
+            </h2>
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-[var(--color-text-secondary)] font-semibold hidden md:inline">
               Hola, {dbUser.firstName} ({dbUser.role})

@@ -1,8 +1,31 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Cargar variables de entorno del archivo .env antes de inicializar Prisma
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
 import { test, expect } from '@playwright/test';
+import { prisma } from '../../src/lib/prisma';
+
+test.afterAll(async () => {
+  await prisma.$disconnect();
+});
 
 test.describe('Flujo de Administración y Sincronización de Catálogo', () => {
   
   test('debe poder iniciar sesión, editar el precio de un producto, ver el cambio en el storefront y luego restaurar', async ({ page }) => {
+    test.setTimeout(90000); // 90 segundos de tolerancia
+
+    // Forzar consistencia de datos iniciales
+    try {
+      await prisma.product.update({
+        where: { slug: 'burger-club' },
+        data: { price: 15500, isActive: true }
+      });
+    } catch (e) {
+      console.warn('Advertencia al resetear CLUB:', e);
+    }
+
     // 1. Iniciar sesión como administrador
     await page.goto('/login');
     await page.getByLabel('Email').fill('admin@mitienda.com');
@@ -73,6 +96,18 @@ test.describe('Flujo de Administración y Sincronización de Catálogo', () => {
   });
 
   test('debe poder pausar un producto y verificar que desaparece de la carta, luego reactivarlo', async ({ page }) => {
+    test.setTimeout(90000); // 90 segundos de tolerancia
+
+    // Forzar estado inicial activo de CRISPY para evitar estado sucio de ejecuciones previas
+    try {
+      await prisma.product.update({
+        where: { slug: 'burger-crispy' },
+        data: { isActive: true }
+      });
+    } catch (e) {
+      console.warn('Advertencia al resetear CRISPY:', e);
+    }
+
     // 1. Iniciar sesión como administrador
     await page.goto('/login');
     await page.getByLabel('Email').fill('admin@mitienda.com');

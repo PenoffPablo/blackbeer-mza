@@ -436,6 +436,48 @@ export default function CartSidebar({
                           )}
                         </div>
 
+                        {/* Campos de dirección manuales obligatorios para validación en BD */}
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                          <div className="col-span-2">
+                            <label className="block text-[10px] font-bold text-black uppercase">
+                              Calle / Avenida
+                            </label>
+                            <input
+                              type="text"
+                              value={street}
+                              onChange={(e) => setStreet(e.target.value)}
+                              placeholder="Ej. Av. San Martín"
+                              className="w-full px-2 py-1.5 text-xs bg-white text-black border-2 border-black rounded font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-black uppercase">
+                              Número
+                            </label>
+                            <input
+                              type="text"
+                              value={number}
+                              onChange={(e) => setNumber(e.target.value)}
+                              placeholder="Ej. 1234"
+                              className="w-full px-2 py-1.5 text-xs bg-white text-black border-2 border-black rounded font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-black uppercase">
+                              Piso / Depto (Opcional)
+                            </label>
+                            <input
+                              type="text"
+                              value={apartment}
+                              onChange={(e) => setApartment(e.target.value)}
+                              placeholder="Ej. 3B"
+                              className="w-full px-2 py-1.5 text-xs bg-white text-black border-2 border-black rounded font-semibold focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                            />
+                          </div>
+                        </div>
+
                         <div className="space-y-1">
                           <label className="block text-[10px] font-bold text-black">
                             Comentarios de envío (Opcional)

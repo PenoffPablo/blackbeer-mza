@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { generateOrderNumber } from "@/lib/utils";
 import type { OrderStatus, OrderType } from "@prisma/client";
 import type { OrderListItem, OrderDetail } from "@/types/order";
 
 interface CreateOrderInput {
-  userId: string;
+  userId: string | null;
   addressId?: string;
   items: {
     productId: string;
@@ -17,6 +16,7 @@ interface CreateOrderInput {
   customerNotes?: string;
   type?: OrderType;
   tableNumber?: string;
+  tableSession?: string | null;
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<string> {
@@ -84,6 +84,7 @@ export async function createOrder(input: CreateOrderInput): Promise<string> {
         addressId: orderType === "DINE_IN" ? null : addressId,
         type: orderType,
         tableNumber: orderType === "DINE_IN" ? input.tableNumber : null,
+        tableSession: input.tableSession || null,
         subtotal,
         shippingCost,
         discount,
