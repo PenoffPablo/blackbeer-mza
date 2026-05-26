@@ -80,34 +80,35 @@ export default function StorefrontClient({
     quantity,
   }: {
     product: Product;
-    selectedExtras: Product[];
+    selectedExtras: { extra: Product; quantity: number }[];
     quantity: number;
   }) => {
-    // Generar nombre de variante a partir de extras
-    const variantName =
-      selectedExtras.length > 0
-        ? selectedExtras.map((e) => `+ ${e.name}`).join(", ")
-        : "";
-
-    // Sumar extras al precio unitario
-    const extrasPrice = selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
-    const finalPricePerUnit = product.price + extrasPrice;
-    
-    // Si tiene precio promocional por par, sumarle los extras de ambas unidades
-    const finalComparePrice = product.comparePrice 
-      ? product.comparePrice + (extrasPrice * 2) 
-      : undefined;
-
     const mainImage = product.images?.[0];
+    
+    // 1. Agregar el producto base al carrito (su precio ya no se ve afectado por los extras)
     addItem({
       productId: product.id,
       name: product.name,
       sku: product.sku,
-      price: finalPricePerUnit,
-      comparePrice: finalComparePrice,
+      price: product.price,
+      comparePrice: product.comparePrice || undefined,
       imageUrl: mainImage?.url,
-      variantName: variantName || undefined,
     }, quantity);
+
+    // 2. Agregar cada extra como un item independiente en el carrito con su respectiva cantidad
+    selectedExtras.forEach(({ extra, quantity: extraQty }) => {
+      if (extraQty > 0) {
+        const extraImage = extra.images?.[0];
+        addItem({
+          productId: extra.id,
+          name: extra.name,
+          sku: extra.sku,
+          price: extra.price,
+          comparePrice: extra.comparePrice || undefined,
+          imageUrl: extraImage?.url,
+        }, extraQty);
+      }
+    });
   };
 
   const handleUpdateQuantity = (productId: string, variantName: string | undefined, newQty: number) => {

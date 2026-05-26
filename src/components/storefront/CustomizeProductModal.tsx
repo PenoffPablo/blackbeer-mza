@@ -34,7 +34,7 @@ interface CustomizeProductModalProps {
   extraProducts: Product[]; // Productos con categoría "extras"
   onConfirm: (item: {
     product: Product;
-    selectedExtras: Product[];
+    selectedExtras: { extra: Product; quantity: number }[];
     quantity: number;
   }) => void;
 }
@@ -47,7 +47,7 @@ export default function CustomizeProductModal({
   onConfirm,
 }: CustomizeProductModalProps) {
   const [quantity, setQuantity] = useState(1);
-  const [selectedExtras, setSelectedExtras] = useState<Product[]>([]);
+  const [selectedExtras, setSelectedExtras] = useState<{ extra: Product; quantity: number }[]>([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [originalTotalPrice, setOriginalTotalPrice] = useState(0);
 
@@ -65,10 +65,10 @@ export default function CustomizeProductModal({
   useEffect(() => {
     if (!product) return;
 
-    const extrasSum = selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
+    const extrasSum = selectedExtras.reduce((sum, item) => sum + (item.extra.price * item.quantity), 0);
     const basePrice = product.price;
 
-    const originalTotal = (basePrice + extrasSum) * quantity;
+    const originalTotal = (basePrice * quantity) + extrasSum;
     setOriginalTotalPrice(originalTotal);
 
     let calculatedBase = 0;
@@ -80,7 +80,7 @@ export default function CustomizeProductModal({
       calculatedBase = basePrice * quantity;
     }
 
-    setTotalPrice(calculatedBase + (extrasSum * quantity));
+    setTotalPrice(calculatedBase + extrasSum);
   }, [product, selectedExtras, quantity]);
 
   if (!product) return null;
@@ -90,13 +90,45 @@ export default function CustomizeProductModal({
     product.category?.slug === "extras" || product.sku.startsWith("BB-EXT-");
   const showExtras = !isExtraCategory && extraProducts.length > 0;
 
+  const handleIncrementExtra = (extra: Product) => {
+    setSelectedExtras((prev) => {
+      const exists = prev.find((item) => item.extra.id === extra.id);
+      if (exists) {
+        return prev.map((item) =>
+          item.extra.id === extra.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        return [...prev, { extra, quantity: 1 }];
+      }
+    });
+  };
+
+  const handleDecrementExtra = (extra: Product) => {
+    setSelectedExtras((prev) => {
+      const exists = prev.find((item) => item.extra.id === extra.id);
+      if (exists) {
+        if (exists.quantity <= 1) {
+          return prev.filter((item) => item.extra.id !== extra.id);
+        }
+        return prev.map((item) =>
+          item.extra.id === extra.id
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        );
+      }
+      return prev;
+    });
+  };
+
   const handleToggleExtra = (extra: Product) => {
     setSelectedExtras((prev) => {
-      const exists = prev.find((e) => e.id === extra.id);
+      const exists = prev.find((item) => item.extra.id === extra.id);
       if (exists) {
-        return prev.filter((e) => e.id !== extra.id);
+        return prev.filter((item) => item.extra.id !== extra.id);
       } else {
-        return [...prev, extra];
+        return [...prev, { extra, quantity: 1 }];
       }
     });
   };
@@ -157,19 +189,24 @@ export default function CustomizeProductModal({
             </h5>
             <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
               {extraProducts.map((extra) => {
-                const isSelected = selectedExtras.some((e) => e.id === extra.id);
+                const extraItem = selectedExtras.find((e) => e.extra.id === extra.id);
+                const extraQty = extraItem ? extraItem.quantity : 0;
+                const isSelected = extraQty > 0;
+
                 return (
-                  <button
+                  <div
                     key={extra.id}
-                    type="button"
-                    onClick={() => handleToggleExtra(extra)}
-                    className={`w-full flex items-center justify-between p-2.5 rounded-lg border-2 text-left transition-all cursor-pointer ${
+                    className={`w-full flex items-center justify-between p-2.5 rounded-lg border-2 text-left transition-all ${
                       isSelected
                         ? "bg-[var(--color-primary-bg)] border-black text-black"
-                        : "bg-[var(--color-surface)] border-[var(--color-border)] hover:border-black/50"
+                        : "bg-[var(--color-surface)] border-[var(--color-border)]"
                     }`}
                   >
-                    <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleExtra(extra)}
+                      className="flex items-center gap-2 text-left flex-grow cursor-pointer"
+                    >
                       <div
                         className={`w-5 h-5 rounded border-2 border-black flex items-center justify-center transition-colors ${
                           isSelected ? "bg-black text-[var(--color-primary)]" : "bg-white"
@@ -187,11 +224,38 @@ export default function CustomizeProductModal({
                           </span>
                         )}
                       </div>
+                    </button>
+
+                    <div className="flex items-center gap-3 shrink-0 ml-2">
+                      <span className="text-xs font-black font-mono">
+                        +{formatPrice(extra.price)}
+                      </span>
+
+                      {/* Control de cantidad para el extra */}
+                      <div className="flex items-center border-2 border-black rounded overflow-hidden bg-white shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => handleDecrementExtra(extra)}
+                          className="px-1.5 py-0.5 hover:bg-neutral-100 border-r-2 border-black cursor-pointer text-black text-xs font-black disabled:opacity-50"
+                          disabled={extraQty === 0}
+                          aria-label={`Disminuir ${extra.name}`}
+                        >
+                          <Minus size={10} strokeWidth={3} />
+                        </button>
+                        <span className="px-2.5 font-mono font-black text-xs text-black min-w-[20px] text-center">
+                          {extraQty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleIncrementExtra(extra)}
+                          className="px-1.5 py-0.5 hover:bg-neutral-100 border-l-2 border-black cursor-pointer text-black text-xs font-black"
+                          aria-label={`Incrementar ${extra.name}`}
+                        >
+                          <Plus size={10} strokeWidth={3} />
+                        </button>
+                      </div>
                     </div>
-                    <span className="text-xs font-black font-mono shrink-0 ml-2">
-                      +{formatPrice(extra.price)}
-                    </span>
-                  </button>
+                  </div>
                 );
               })}
             </div>

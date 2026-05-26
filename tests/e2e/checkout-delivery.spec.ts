@@ -37,9 +37,11 @@ test.describe('Flujo de Pedido con Delivery y Modificadores', () => {
 
     const extraBtn = page.locator('button', { hasText: 'Dip de cheddar' });
     await extraBtn.click();
+    // Como los extras ahora son contables e independientes del producto base, incrementamos su cantidad a 2 para totalizar 25000
+    await page.getByLabel('Incrementar Dip de cheddar').click();
     const extraPrice = 1500;
 
-    // Aumentar cantidad a 2
+    // Aumentar cantidad del producto base a 2
     await page.getByLabel('Incrementar cantidad').click();
 
     // Si el producto BLACK tiene promo de llevando 2, la cantidad 2 = comparePrice. Si no, es basePrice * 2.
