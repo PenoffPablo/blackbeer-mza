@@ -77,8 +77,6 @@ export function CheckoutForm() {
       const data = await response.json();
       showToast({ message: "¡Pedido creado! Abriendo WhatsApp...", type: "success" });
 
-      // Generate ticket number and send WhatsApp comanda
-      const ticketNumber = Math.floor(Math.random() * 900) + 100;
       const orderDetails = {
         customerName: `${firstName} ${lastName}`.trim(),
         customerPhone: phone,
@@ -86,7 +84,7 @@ export function CheckoutForm() {
         deliveryZone: { name: `${city}, ${state}`, cost: storeConfig.shipping.defaultShippingCost },
         address: { street, number, apartment, notes: `CP: ${zipCode}` },
         paymentMethod: paymentMethod === "CASH" ? ("cash" as const) : ("transfer" as const),
-        ticketNumber,
+        ticketNumber: data.orderNumber || "PED-NUEVO",
       };
 
       const message = formatWhatsAppMessage(cart as any, orderDetails);

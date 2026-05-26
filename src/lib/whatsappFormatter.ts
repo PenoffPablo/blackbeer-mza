@@ -14,7 +14,7 @@ export interface OrderDetails {
   } | null;
   paymentMethod: "cash" | "transfer";
   gpsCoords?: { lat: number; lng: number } | null;
-  ticketNumber: number;
+  ticketNumber: string | number;
   tipAmount?: number;
   orderComments?: string;
 }

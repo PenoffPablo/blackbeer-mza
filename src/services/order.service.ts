@@ -63,7 +63,7 @@ async function getOrCreateTableSessionTx(tx: Prisma.TransactionClient, tableNumb
   return `SES-${tableNumber}-${shortDate}-${randomSuffix}`;
 }
 
-export async function createOrder(input: CreateOrderInput): Promise<{ orderId: string; initPoint: string | null }> {
+export async function createOrder(input: CreateOrderInput): Promise<{ orderId: string; orderNumber: string; initPoint: string | null }> {
   const { userId, items, shippingMethod, customerNotes, type } = input;
 
   // Fetch products with current prices
@@ -202,7 +202,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId: s
       }
     }
 
-    return { orderId: newOrder.id, initPoint };
+    return { orderId: newOrder.id, orderNumber: newOrder.orderNumber, initPoint };
   });
 
   return result;

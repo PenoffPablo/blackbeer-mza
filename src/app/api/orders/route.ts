@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     const guestPhone = !userId ? validatedData.phone : undefined;
 
     // 3. Delegate order creation and transactional persistence to the service
-    const { orderId, initPoint } = await createOrder({
+    const { orderId, orderNumber, initPoint } = await createOrder({
       userId,
       items: validatedData.items,
       type: validatedData.type,
@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       orderId,
+      orderNumber,
       initPoint,
       message: "Orden creada con éxito",
     });

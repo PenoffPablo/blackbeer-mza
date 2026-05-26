@@ -205,9 +205,6 @@ export default function CartSidebar({
 
         const data = await response.json();
 
-        // Compilar ticketNumber aleatorio (001 a 999) para el cajero
-        const ticketNumber = Math.floor(Math.random() * 900) + 100;
-
         const orderDetails: any = {
           customerName,
           customerPhone,
@@ -215,7 +212,7 @@ export default function CartSidebar({
           address: { street: "Ubicación en Mapa", number: gpsCoords ? `GPS: ${gpsCoords.lat.toFixed(6)}, ${gpsCoords.lng.toFixed(6)}` : "", notes },
           paymentMethod,
           gpsCoords,
-          ticketNumber,
+          ticketNumber: data.orderNumber || "PED-NUEVO",
           tipAmount,
           orderComments,
         };
