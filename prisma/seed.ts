@@ -44,7 +44,7 @@ async function main() {
   console.log(`✅ Customer: ${customer.email}`);
 
   // ═══ BLACKBEER CATALOG ═══
-  await initializeDatabase();
+  await initializeDatabase(true);
 
   // ═══ COUPONS ═══
   await prisma.coupon.upsert({

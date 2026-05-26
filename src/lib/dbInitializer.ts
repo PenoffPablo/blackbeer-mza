@@ -937,9 +937,16 @@ const BLACKBEER_SEED_PRODUCTS: BlackBeerProductInput[] = [
  * Verifica si hay productos en la base de datos y la puebla
  * utilizando operaciones upsert idempotentes.
  */
-export async function initializeDatabase() {
+export async function initializeDatabase(force = false) {
   try {
-    console.log("🚀 Verificando inicialización de catálogo BlackBeer Mza...");
+    if (!force) {
+      const productCount = await prisma.product.count();
+      if (productCount > 0) {
+        return;
+      }
+    }
+
+    console.log("🚀 Inicializando catálogo BlackBeer Mza...");
 
     // 1. Crear o actualizar categorías
     const categorySlugs = ["burgers", "lomos", "papas", "pizzas", "extras", "tragos"];

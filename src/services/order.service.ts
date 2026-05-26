@@ -78,16 +78,29 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId: s
     const product = products.find((p) => p.id === item.productId);
     if (!product) throw new Error(`Producto ${item.productId} no encontrado`);
 
-    let unitPrice = Number(product.price);
+    let basePrice = Number(product.price);
+    const comparePrice = product.comparePrice ? Number(product.comparePrice) : null;
     let sku = product.sku;
 
     if (item.variantId) {
       const variant = product.variants.find((v) => v.id === item.variantId);
       if (variant) {
-        unitPrice = variant.price ? Number(variant.price) : unitPrice;
+        basePrice = variant.price ? Number(variant.price) : basePrice;
         sku = variant.sku;
       }
     }
+
+    // Calcular subtotal aplicando promoción "llevando 2" (comparePrice) si aplica
+    let itemSubtotal = basePrice * item.quantity;
+    if (comparePrice && comparePrice > basePrice) {
+      const pairs = Math.floor(item.quantity / 2);
+      const singles = item.quantity % 2;
+      itemSubtotal = (pairs * comparePrice) + (singles * basePrice);
+    }
+
+    // El precio unitario efectivo guardado es el ponderado (subtotal / cantidad)
+    // para que la visualización del panel y los cálculos de base de datos coincidan al 100%
+    const unitPrice = itemSubtotal / item.quantity;
 
     return {
       productId: item.productId,
@@ -96,7 +109,7 @@ export async function createOrder(input: CreateOrderInput): Promise<{ orderId: s
       unitPrice,
       productName: item.variantName ? `${product.name} (${item.variantName})` : product.name,
       productSku: sku,
-      subtotal: unitPrice * item.quantity,
+      subtotal: itemSubtotal,
     };
   });
 
