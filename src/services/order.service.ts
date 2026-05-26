@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import type { OrderStatus, OrderType } from "@prisma/client";
+import type { OrderStatus, OrderType, PaymentMethod, Prisma } from "@prisma/client";
 import type { OrderListItem, OrderDetail } from "@/types/order";
 
 interface CreateOrderInput {
   userId: string | null;
-  addressId?: string;
   items: {
     productId: string;
     variantId?: string;
@@ -16,11 +15,56 @@ interface CreateOrderInput {
   customerNotes?: string;
   type?: OrderType;
   tableNumber?: string;
-  tableSession?: string | null;
+  paymentMethod?: PaymentMethod;
+  shippingAddress?: {
+    street: string;
+    number: string;
+    apartment?: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
 }
 
-export async function createOrder(input: CreateOrderInput): Promise<string> {
-  const { userId, items, addressId, shippingMethod, customerNotes } = input;
+function getTableHash(tableNumber: string): number {
+  let hash = 0;
+  for (let i = 0; i < tableNumber.length; i++) {
+    hash = (hash << 5) - hash + tableNumber.charCodeAt(i);
+    hash |= 0; // Convert a entero de 32 bits
+  }
+  return Math.abs(hash);
+}
+
+async function getOrCreateTableSessionTx(tx: Prisma.TransactionClient, tableNumber: string): Promise<string> {
+  const activeOrder = await tx.order.findFirst({
+    where: {
+      tableNumber,
+      type: "DINE_IN",
+      status: {
+        in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED"]
+      },
+      createdAt: {
+        gte: new Date(Date.now() - 6 * 60 * 60 * 1000) // Límite de seguridad: últimas 6 horas
+      }
+    },
+    orderBy: { createdAt: "desc" },
+    select: { tableSession: true }
+  });
+
+  if (activeOrder?.tableSession) {
+    return activeOrder.tableSession;
+  }
+
+  const shortDate = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `SES-${tableNumber}-${shortDate}-${randomSuffix}`;
+}
+
+export async function createOrder(input: CreateOrderInput): Promise<{ orderId: string; initPoint: string | null }> {
+  const { userId, items, shippingMethod, customerNotes, type } = input;
 
   // Fetch products with current prices
   const productIds = items.map((i) => i.productId);
@@ -62,12 +106,21 @@ export async function createOrder(input: CreateOrderInput): Promise<string> {
   const tax = 0;
   const total = subtotal + shippingCost - discount + tax;
 
-  const order = await prisma.$transaction(async (tx) => {
-    const orderType = input.type ?? "DELIVERY";
+  const result = await prisma.$transaction(async (tx) => {
+    const orderType = type ?? "DELIVERY";
+
+    // 1. Manejar concurrencia de sesión de salón con Advisory Lock
+    let tableSession: string | null = null;
+    if (orderType === "DINE_IN" && input.tableNumber) {
+      const tableHash = getTableHash(input.tableNumber);
+      await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(${tableHash})`);
+      tableSession = await getOrCreateTableSessionTx(tx, input.tableNumber);
+    }
+
+    // 2. Incrementar y resolver número de orden
     const sequenceName = orderType === "DINE_IN" ? "DINE_IN" : "DELIVERY_TAKE_AWAY";
     const prefix = orderType === "DINE_IN" ? "TCK-" : "PED-";
 
-    // Upsert transaccional atómico
     const seq = await tx.orderSequence.upsert({
       where: { name: sequenceName },
       update: { value: { increment: 1 } },
@@ -76,7 +129,25 @@ export async function createOrder(input: CreateOrderInput): Promise<string> {
 
     const orderNumber = `${prefix}${seq.value}`;
 
-    // Create order
+    // 3. Crear dirección de envío si aplica (Delivery/Take Away)
+    let addressId: string | null = null;
+    if (orderType !== "DINE_IN" && input.shippingAddress) {
+      const address = await tx.address.create({
+        data: {
+          userId,
+          street: input.shippingAddress.street,
+          number: input.shippingAddress.number,
+          apartment: input.shippingAddress.apartment || null,
+          city: input.shippingAddress.city,
+          state: input.shippingAddress.state,
+          zipCode: input.shippingAddress.zipCode,
+          label: "Envío pedido",
+        },
+      });
+      addressId = address.id;
+    }
+
+    // 4. Crear la Orden
     const newOrder = await tx.order.create({
       data: {
         orderNumber,
@@ -84,7 +155,7 @@ export async function createOrder(input: CreateOrderInput): Promise<string> {
         addressId: orderType === "DINE_IN" ? null : addressId,
         type: orderType,
         tableNumber: orderType === "DINE_IN" ? input.tableNumber : null,
-        tableSession: input.tableSession || null,
+        tableSession,
         subtotal,
         shippingCost,
         discount,
@@ -92,17 +163,38 @@ export async function createOrder(input: CreateOrderInput): Promise<string> {
         total,
         shippingMethod: orderType === "DINE_IN" ? "Consumo en salón" : shippingMethod,
         customerNotes,
+        guestName: userId ? null : input.guestName,
+        guestEmail: userId ? null : input.guestEmail,
+        guestPhone: userId ? null : input.guestPhone,
         items: {
           create: orderItems,
         },
       },
     });
 
-    return newOrder;
+    // 5. Crear el registro de Pago transaccional
+    let initPoint: string | null = null;
+    if (input.paymentMethod) {
+      await tx.payment.create({
+        data: {
+          orderId: newOrder.id,
+          amount: total,
+          method: input.paymentMethod,
+          status: "PENDING",
+        },
+      });
+
+      if (input.paymentMethod === "MERCADO_PAGO") {
+        initPoint = `https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=mock-pref-${newOrder.id}`;
+      }
+    }
+
+    return { orderId: newOrder.id, initPoint };
   });
 
-  return order.id;
+  return result;
 }
+
 
 export async function getOrdersByUser(
   userId: string

@@ -65,12 +65,20 @@ export default async function AdminOrdersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-semibold text-[var(--color-text)]">
-                        {order.user ? `${order.user.firstName} ${order.user.lastName}` : "Invitado"}
+                        {order.user
+                          ? `${order.user.firstName} ${order.user.lastName}`
+                          : (order.guestName || "Invitado")}
                       </div>
-                      {order.user && !order.user.email.startsWith("salon-mesa-") && (
+                      {order.user && !order.user.email.startsWith("salon-mesa-") ? (
                         <div className="text-2xs text-[var(--color-text-muted)] mt-0.5">
                           {order.user.email}
                         </div>
+                      ) : (
+                        !order.user && order.guestEmail && (
+                          <div className="text-2xs text-[var(--color-text-muted)] mt-0.5">
+                            {order.guestEmail}
+                          </div>
+                        )
                       )}
                     </td>
                     <td className="px-6 py-4">

@@ -106,6 +106,11 @@ test.describe('Flujos de Invitado (Delivery) y Sesiones de Mesa (Salón)', () =>
     // Validar que contenga relación de dirección de entrega
     expect(dbOrder!.addressId).not.toBeNull();
     
+    // Validar que se hayan guardado los datos de contacto del invitado
+    expect(dbOrder!.guestName).toBe('Invitado Delivery E2E');
+    expect(dbOrder!.guestPhone).toBe('2619999999');
+    expect(dbOrder!.guestEmail).toBe('2619999999@blackbeermza.com');
+
     const dbAddress = dbOrder!.address;
     expect(dbAddress).not.toBeNull();
     // La dirección del invitado no debe estar vinculada a ningún usuario en la tabla Address

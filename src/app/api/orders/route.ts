@@ -79,31 +79,6 @@ const orderSchema = z.object({
   }
 });
 
-async function getOrCreateTableSession(tableNumber: string): Promise<string> {
-  const activeOrder = await prisma.order.findFirst({
-    where: {
-      tableNumber,
-      type: "DINE_IN",
-      status: {
-        in: ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED"]
-      },
-      createdAt: {
-        gte: new Date(Date.now() - 6 * 60 * 60 * 1000) // Límite de seguridad: últimas 6 horas
-      }
-    },
-    orderBy: { createdAt: "desc" },
-    select: { tableSession: true }
-  });
-
-  if (activeOrder?.tableSession) {
-    return activeOrder.tableSession;
-  }
-
-  const shortDate = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `SES-${tableNumber}-${shortDate}-${randomSuffix}`;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -113,38 +88,21 @@ export async function POST(request: NextRequest) {
     const currentUser = await getCurrentUser();
     const userId = currentUser?.userId || null;
 
-    // 2. Create shipping address (only for DELIVERY or TAKE_AWAY)
-    let addressId: string | undefined = undefined;
-    if (validatedData.type !== "DINE_IN" && validatedData.shippingAddress) {
-      const address = await prisma.address.create({
-        data: {
-          userId,
-          street: validatedData.shippingAddress.street,
-          number: validatedData.shippingAddress.number,
-          apartment: validatedData.shippingAddress.apartment || null,
-          city: validatedData.shippingAddress.city,
-          state: validatedData.shippingAddress.state,
-          zipCode: validatedData.shippingAddress.zipCode,
-          label: "Envío pedido",
-        },
-      });
-      addressId = address.id;
-    }
+    // 2. Map guest contact details if not logged in
+    const guestName = !userId
+      ? `${validatedData.firstName} ${validatedData.lastName || ""}`.trim()
+      : undefined;
+    const guestEmail = !userId ? validatedData.email : undefined;
+    const guestPhone = !userId ? validatedData.phone : undefined;
 
-    // 3. Resolve table session for dine-in consumption
-    let tableSession: string | null = null;
-    if (validatedData.type === "DINE_IN" && validatedData.tableNumber) {
-      tableSession = await getOrCreateTableSession(validatedData.tableNumber);
-    }
-
-    // 4. Create the order
-    const orderId = await createOrder({
+    // 3. Delegate order creation and transactional persistence to the service
+    const { orderId, initPoint } = await createOrder({
       userId,
-      addressId,
       items: validatedData.items,
       type: validatedData.type,
       tableNumber: validatedData.tableNumber,
-      tableSession,
+      shippingAddress: validatedData.shippingAddress,
+      paymentMethod: validatedData.paymentMethod,
       shippingMethod: validatedData.type === "DINE_IN"
         ? "Consumo en salón"
         : validatedData.type === "TAKE_AWAY"
@@ -153,31 +111,10 @@ export async function POST(request: NextRequest) {
       customerNotes: validatedData.type === "DINE_IN"
         ? "Pedido en salón sin envío"
         : `Pago vía: ${validatedData.paymentMethod}`,
+      guestName,
+      guestEmail,
+      guestPhone,
     });
-
-    // 5. Handle specific payment integration
-    let initPoint = null;
-
-    if (validatedData.paymentMethod) {
-      const order = await prisma.order.findUnique({
-        where: { id: orderId },
-      });
-
-      if (order) {
-        await prisma.payment.create({
-          data: {
-            orderId,
-            amount: order.total,
-            method: validatedData.paymentMethod,
-            status: "PENDING",
-          },
-        });
-
-        if (validatedData.paymentMethod === "MERCADO_PAGO") {
-          initPoint = `https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=mock-pref-${orderId}`;
-        }
-      }
-    }
 
     return NextResponse.json({
       orderId,
@@ -197,3 +134,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

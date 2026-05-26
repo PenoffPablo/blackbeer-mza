@@ -45,6 +45,12 @@ export default async function AdminOrderDetailPage({
     discount: Number(order.discount),
     tax: Number(order.tax),
     total: Number(order.total),
+    user: order.user || {
+      firstName: order.guestName || "Invitado",
+      lastName: "",
+      email: order.guestEmail || "No provisto",
+      phone: order.guestPhone || null,
+    },
     items: order.items.map((item) => ({
       ...item,
       unitPrice: Number(item.unitPrice),
