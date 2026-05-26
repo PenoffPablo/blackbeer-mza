@@ -8,14 +8,19 @@ Sistema profesional y optimizado para la gestión de pedidos autónomos y envío
 
 ## 🚀 Características Clave
 
-*   **⚡ Checkout Híbrido**: 
-    *   **Delivery**: Con geolocalización exacta interactiva mediante mapas interactivos (Leaflet/GPS). Opción de pago en efectivo restringida para mitigar fraudes (solo transferencia).
-    *   **Take Away**: Selección dinámica de sucursales integradas en la configuración y limpieza automática de datos de entrega sobrantes.
-    *   **Consumo Local (Mesas QR)**: Soporte completo para pedidos a mesa, incluyendo propina sugerida (10%) o personalizada para el mozo.
-*   **📱 WhatsApp Engine**: Formateo limpio y estructurado de la comanda con emojis para el cajero, omitiendo subtotales innecesarios para ir al grano (Total a pagar y detalles clave).
-*   **🎨 Interfaz Neo-Brutalista Premium**: Diseño visual impactante, responsivo y veloz desarrollado con Tailwind CSS 4 y variables dinámicas de theming CSS.
-*   **🔒 Seguridad y Roles**: Control de acceso a través de JWT (HTTPOnly cookies) y Middleware en Next.js para rutas administrativas (`/admin/*`) y de cliente.
-*   **🗄️ ORM Multi-motor**: Soporte nativo para base de datos local SQLite (desarrollo rápido) y PostgreSQL (producción) a través de Prisma.
+*   **⚡ Checkout Híbrido y Atómico**:
+    *   **Delivery**: Con soporte para usuarios registrados e invitados (anónimos). Requiere geolocalización interactiva en mapa (Leaflet) e ingreso de dirección física estructurada.
+    *   **Take Away**: Selección dinámica de la sucursal física de retiro y limpieza automática de datos de entrega sobrantes.
+    *   **Consumo Local (Mesas QR)**: Vinculación a mesas y agrupamiento dinámico de comandas consecutivas en una misma sesión activa (`tableSession`) para cobros unificados. Incluye propina sugerida (10%) o personalizada.
+    *   **Consistencia Transaccional (ACID)**: Todo el flujo de checkout (Address, Order, OrderItems y Payment) se ejecuta dentro de una transacción interactiva de Prisma. Implementa bloqueos consultivos de PostgreSQL (`pg_advisory_xact_lock`) por mesa para erradicar condiciones de carrera en pedidos simultáneos.
+*   **📱 WhatsApp Engine**: Genera la comanda estructurada limpia (sin subtotales redundantes) optimizada con emojis y redirecciona al chat oficial del local para la confirmación final por el cliente.
+*   **🎨 Panel de Administración Adaptivo**:
+    *   Navegación responsive optimizada para pantallas móviles mediante menú lateral colapsable (`AdminMobileNav`).
+    *   Gestión en tiempo real de comandas activas en cocina, con soporte completo para datos de contacto de invitados (`guestName`, `guestEmail`, `guestPhone`).
+    *   Selección persistente de sucursal de impresión almacenada localmente para formatear los estilos de impresión de comandas en ticketeras térmicas (80mm).
+    *   Gestión dinámica de catálogo (precios, stock, promociones 2x y desactivación temporal de productos) y gestión de personal de trabajo.
+*   **🔒 Seguridad y Roles**: Control de accesos mediante JWT (cookies `HTTPOnly`) para proteger rutas administrativas y API (`/admin/*`) contra accesos no autorizados.
+*   **🗄️ ORM Flexible**: Soporte nativo para SQLite (desarrollo rápido sin configuración) y PostgreSQL (producción) vía Prisma.
 
 ---
 
